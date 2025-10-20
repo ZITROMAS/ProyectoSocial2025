@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>📡 Dashboard IoT – Proyecto Social 2025</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  body { font-family: Arial, sans-serif; margin: 30px; background: #f5f5f5; }
+  h1 { color: #0077cc; }
+  #dataBox { background: white; padding: 10px; border-radius: 8px; margin-bottom: 20px; }
+  #alert {
+    display: none;
+    background: #ff4d4d;
+    color: white;
+    padding: 10px;
+    border-radius: 5px;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 15px;
+  }
+  canvas { background: #fff; border-radius: 8px; padding: 10px; }
+</style>
+</head>
+<body>
+  <h1>📊 Monitoreo IoT – Proyecto Social 2025</h1>
+  <div id="alert">🚨 ¡Movimiento detectado!</div>
+  <div id="dataBox">Esperando datos del sensor...</div>
+  <canvas id="chart" width="400" height="180"></canvas>
+
+  <audio id="alarmSound" src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg"></audio>
+
+  <script>
+    const ctx = document.getElementById('chart').getContext('2d');
+    const chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: [],
+        datasets: [{
+          label: 'Estado de movimiento',
+          data: [],
+          borderColor: '#0077cc',
+          backgroundColor: 'rgba(0,119,204,0.2)',
+          borderWidth: 2,
+          tension: 0.3,
+        }]
+      },
+      options: {
+        scales: {
+          y: { beginAtZero: true, ticks: { stepSize: 1, callback: v => v ? 'Movimiento' : 'Sin movimiento' } }
+        }
+      }
+    });
+
+    const alertBox = document.getElementById('alert');
+    const dataBox = document.getElementById('dataBox');
+    const alarm = document.getElementById('alarmSound');
+
+    async function loadData() {
+      try {
+        const res = await fetch("/data");
+        const data = await res.json();
+
+        if (data.length === 0) {
+          dataBox.innerHTML = "Aún no hay datos recibidos...";
+          return;
+        }
+
+        const last = data[data.length - 1];
+        const motion = last.motion;
+        const time = last.time;
+        const device = last.device;
+
+        dataBox.innerHTML = `
+          <b>Último dispositivo:</b> ${device}<br>
+          <b>Movimiento:</b> ${motion ? "Sí ✅" : "No ❌"}<br>
+          <b>Tiempo:</b> ${time}
+        `;
+
+        // Añade nuevos puntos al gráfico
+        chart.data.labels.push(time);
+        chart.data.datasets[0].data.push(motion);
+        if (chart.data.labels.length > 20) {
+          chart.data.labels.shift();
+          chart.data.datasets[0].data.shift();
+        }
+        chart.update();
+
+        // Si hay movimiento, lanza alerta visual y sonora
+        if (motion === 1) {
+          alertBox.style.display = "block";
+          alarm.play();
+          setTimeout(() => alertBox.style.display = "none", 2000);
+        }
+
+      } catch (e) {
+        console.error("Error al obtener datos:", e);
+        dataBox.innerHTML = "Error al obtener datos del servidor.";
+      }
+    }
+
+    setInterval(loadData, 2000);
+    loadData();
+  </script>
+</body>
+</html>
