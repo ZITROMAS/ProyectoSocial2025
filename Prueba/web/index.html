@@ -42,8 +42,6 @@
   <div id="alerta">🚨 ¡MOVIMIENTO DETECTADO!</div>
   <div id="status">Esperando datos del sensor...</div>
 
-  <audio id="sonido" src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg"></audio>
-
     <script>
       const alerta = document.getElementById("alerta");
       const statusBox = document.getElementById("status");
@@ -59,7 +57,7 @@
         const ahora = new Date();
         const hora = ahora.getHours();
         // Si es entre 8pm (20) y 23:59, o entre 0 y 7:59
-        return (hora >= 15 || hora < 8);
+        return (hora >= 21 || hora < 5);
       }
     
       async function verificarMovimiento() {
@@ -81,8 +79,6 @@
     
           if (movimiento === 1 && dentroHorarioPermitido()) {
             alerta.style.display = "block";
-            sonido.play();
-    
             // Notificación del sistema solo si está en horario permitido
             if (Notification.permission === "granted") {
               new Notification("🚨 ¡Movimiento detectado!", {
