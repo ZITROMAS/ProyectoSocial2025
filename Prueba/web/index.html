@@ -44,57 +44,67 @@
 
   <audio id="sonido" src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg"></audio>
 
-  <script>
-    const alerta = document.getElementById("alerta");
-    const statusBox = document.getElementById("status");
-    const sonido = document.getElementById("sonido");
-
-    // Solicitar permiso para notificaciones del sistema
-    if (Notification.permission !== "granted") {
-      Notification.requestPermission();
-    }
-
-    async function verificarMovimiento() {
-      try {
-        const res = await fetch("/data");
-        const datos = await res.json();
-
-        if (datos.length === 0) {
-          statusBox.textContent = "Aún no hay datos recibidos...";
-          return;
-        }
-
-        const ultimo = datos[datos.length - 1];
-        const movimiento = ultimo.motion;
-        const hora = ultimo.time;
-        const dispositivo = ultimo.device;
-
-        statusBox.textContent = `Último dispositivo: ${dispositivo} | Hora: ${hora}`;
-
-        if (movimiento === 1) {
-          alerta.style.display = "block";
-          sonido.play();
-
-          // Notificación del sistema
-          if (Notification.permission === "granted") {
-            new Notification("🚨 ¡Movimiento detectado!", {
-              body: `Dispositivo: ${dispositivo} (${hora})`,
-              icon: "https://cdn-icons-png.flaticon.com/512/565/565547.png"
-            });
-          }
-
-          // Ocultar alerta después de unos segundos
-          setTimeout(() => alerta.style.display = "none", 4000);
-        }
-      } catch (e) {
-        console.error("Error:", e);
-        statusBox.textContent = "Error al obtener datos del servidor.";
+    <script>
+      const alerta = document.getElementById("alerta");
+      const statusBox = document.getElementById("status");
+      const sonido = document.getElementById("sonido");
+    
+      // Pedir permiso de notificaciones
+      if (Notification.permission !== "granted") {
+        Notification.requestPermission();
       }
-    }
+    
+      // Función para verificar si estamos dentro del horario permitido (20:00 - 08:00)
+      function dentroHorarioPermitido() {
+        const ahora = new Date();
+        const hora = ahora.getHours();
+        // Si es entre 8pm (20) y 23:59, o entre 0 y 7:59
+        return (hora >= 20 || hora < 8);
+      }
+    
+      async function verificarMovimiento() {
+        try {
+          const res = await fetch("/data");
+          const datos = await res.json();
+    
+          if (datos.length === 0) {
+            statusBox.textContent = "Aún no hay datos recibidos...";
+            return;
+          }
+    
+          const ultimo = datos[datos.length - 1];
+          const movimiento = ultimo.motion;
+          const hora = ultimo.time;
+          const dispositivo = ultimo.device;
+    
+          statusBox.textContent = `Último dispositivo: ${dispositivo} | Hora: ${hora}`;
+    
+          if (movimiento === 1 && dentroHorarioPermitido()) {
+            alerta.style.display = "block";
+            sonido.play();
+    
+            // Notificación del sistema solo si está en horario permitido
+            if (Notification.permission === "granted") {
+              new Notification("🚨 ¡Movimiento detectado!", {
+                body: `Dispositivo: ${dispositivo} (${hora})`,
+                icon: "https://cdn-icons-png.flaticon.com/512/565/565547.png"
+              });
+            }
+    
+            // Ocultar alerta después de unos segundos
+            setTimeout(() => alerta.style.display = "none", 4000);
+          }
+    
+        } catch (e) {
+          console.error("Error:", e);
+          statusBox.textContent = "Error al obtener datos del servidor.";
+        }
+      }
+    
+      setInterval(verificarMovimiento, 2000);
+      verificarMovimiento();
+    </script>
 
-    setInterval(verificarMovimiento, 2000);
-    verificarMovimiento();
-  </script>
 </body>
 </html>
 
