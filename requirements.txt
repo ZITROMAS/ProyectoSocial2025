@@ -1,3 +1,4 @@
-azure-eventhub==5.11.4
-Flask==3.0.3
-Flask-Cors==4.0.0
+Flask
+flask-cors
+azure-eventhub
+aiohttp
